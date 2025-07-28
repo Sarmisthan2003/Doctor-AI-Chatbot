@@ -1,0 +1,23 @@
+{
+  "workbench.colorTheme": "Default Dark+",
+  "redhat.telemetry.enabled": true,
+  "C_Cpp.autocompleteAddParentheses": true,
+  "cmake.showOptionsMovedNotification": false,
+  "code-runner.runInTerminal": true,
+  "code-runner.saveFileBeforeRun": true,
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 10,
+  "editor.mouseWheelZoom": true,
+  "git.blame.editorDecoration.enabled": true,
+  "files.exclude": {
+    "**/Pipfile": false,
+    "**/Pipfile.lock": false
+  },
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  "python.analysis.extraPaths": [
+    "./.venv/Lib/site-packages"
+  ],
+  "python.analysis.indexing": true,
+  "python.analysis.autoSearchPaths": true,
+  "python.venvPath": "${workspaceFolder}/.venv"
+}

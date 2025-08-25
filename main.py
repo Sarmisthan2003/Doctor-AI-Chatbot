@@ -1,3 +1,4 @@
+
 import base64
 import requests
 import os
@@ -18,6 +19,7 @@ load_dotenv()
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
+print("Loaded API Key:", GROQ_API_KEY)
 
 if not GROQ_API_KEY:
     raise ValueError("Groq API KEY is not set in the .env file")
@@ -96,6 +98,3 @@ if __name__ == "__main__":
     query = "What are the elements in this picture?"
     result = process_image(image_path, query)
     print(result)
-
-
-

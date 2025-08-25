@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🧠 AI Medical Image Analyzer</title>
+  
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+  <!-- Marked.js for Markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    body {
+      background: radial-gradient(ellipse at top, #0f172a, #0a0f1a);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+    }
+    .spinner {
+      border: 4px solid #2c2c2c;
+      border-top: 4px solid #38bdf8;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-6 text-gray-300">
+  <div class="w-full max-w-5xl space-y-10 glass rounded-3xl shadow-2xl p-10 border border-gray-600">
+    
+    <div class="text-center space-y-3">
+      <h1 class="text-4xl font-extrabold text-cyan-400 tracking-wide">🧠 AI Medical Image Analyzer</h1>
+      <p class="text-gray-400">Upload medical scans and ask intelligent queries for instant analysis using LLM + Vision AI.</p>
+    </div>
+
+    <!-- Upload & Preview -->
+    <div class="space-y-4">
+      <h2 class="text-2xl text-blue-300 font-semibold mb-2">📤 Upload Scan</h2>
+
+      <div class="flex items-center gap-4">
+        <button id="upload-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg shadow hover:shadow-md transition">
+          <i class="fas fa-upload mr-2"></i> Choose File
+        </button>
+        <span class="text-sm text-gray-400 hidden" id="file-name">No file selected</span>
+        <input type="file" id="image-upload" accept="image/*" class="hidden">
+      </div>
+
+      <div id="image-container" class="mt-4 hidden">
+        <img id="display-image" class="rounded-xl border border-gray-700 shadow-lg w-full max-h-96 object-contain" alt="Preview">
+      </div>
+    </div>
+
+    <!-- Query Input -->
+    <div class="space-y-2">
+      <h2 class="text-2xl text-violet-400 font-semibold">❓ Ask a Medical Question</h2>
+      <textarea id="query-input" rows="3" placeholder="e.g., Does this indicate pneumonia?" class="w-full p-4 rounded-lg bg-gray-900 text-white border border-gray-700 placeholder-gray-500 shadow-inner"></textarea>
+      
+      <button id="submit-query" class="w-full mt-2 bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 rounded-xl transition-all shadow-md">
+        <i class="fas fa-paper-plane mr-2"></i> Submit Query
+      </button>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="hidden text-center mt-4">
+      <span class="spinner"></span>
+      <p class="mt-2 text-sm text-blue-400">Processing your image and query...</p>
+    </div>
+
+    <!-- AI Responses -->
+    <div id="response-container-llama" class="hidden mt-6">
+      <h3 class="text-green-400 font-semibold text-lg">🤖 LLaMA Text Response:</h3>
+      <div class="mt-2 p-4 bg-gray-800 border border-gray-700 rounded-xl" id="response-llama"></div>
+    </div>
+
+    <div id="response-container-llava" class="hidden mt-4">
+      <h3 class="text-cyan-400 font-semibold text-lg">🧠 LLaVA Vision Analysis:</h3>
+      <div class="mt-2 p-4 bg-gray-800 border border-gray-700 rounded-xl" id="response-llava"></div>
+    </div>
+
+    <!-- Error -->
+    <div id="error-container" class="hidden mt-4 p-3 text-red-400 bg-red-800/20 border border-red-500 rounded-lg">
+      <span id="error-text"></span>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const uploadBtn = document.getElementById('upload-btn');
+      const imageUpload = document.getElementById('image-upload');
+      const displayImage = document.getElementById('display-image');
+      const imageContainer = document.getElementById('image-container');
+      const queryInput = document.getElementById('query-input');
+      const submitQuery = document.getElementById('submit-query');
+      const responseLlama = document.getElementById('response-llama');
+      const responseLlava = document.getElementById('response-llava');
+      const responseContainerLlama = document.getElementById('response-container-llama');
+      const responseContainerLlava = document.getElementById('response-container-llava');
+      const errorContainer = document.getElementById('error-container');
+      const errorText = document.getElementById('error-text');
+      const spinner = document.getElementById('loading-spinner');
+      const fileName = document.getElementById('file-name');
+
+      uploadBtn.addEventListener('click', () => imageUpload.click());
+
+      imageUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            displayImage.src = e.target.result;
+            imageContainer.classList.remove('hidden');
+            fileName.textContent = file.name;
+            fileName.classList.remove('hidden');
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      submitQuery.addEventListener('click', async () => {
+        const image = imageUpload.files[0];
+        const query = queryInput.value.trim();
+        if (!image || !query) {
+          showError('⚠️ Please upload an image and enter a query.');
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('image', image);
+        formData.append('query', query);
+
+        try {
+          submitQuery.disabled = true;
+          spinner.classList.remove('hidden');
+          errorContainer.classList.add('hidden');
+          responseContainerLlama.classList.add('hidden');
+          responseContainerLlava.classList.add('hidden');
+
+          const response = await fetch('/upload_and_query', {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) throw new Error(result.detail || 'Error processing request.');
+
+          responseLlama.innerHTML = marked.parse(result.llama);
+          responseLlava.innerHTML = marked.parse(result.llava);
+          responseContainerLlama.classList.remove('hidden');
+          responseContainerLlava.classList.remove('hidden');
+
+        } catch (err) {
+          console.error(err);
+          showError(err.message);
+        } finally {
+          spinner.classList.add('hidden');
+          submitQuery.disabled = false;
+        }
+      });
+
+      function showError(message) {
+        errorText.textContent = message;
+        errorContainer.classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -4,3 +4,4 @@ python-dotenv
 requests
 pillow
 jinja2
+python-multipart
